@@ -16,9 +16,15 @@ function renderItems() {
   items.forEach((item, index) => {
     panel.innerHTML += `
       <div class="list-group-item d-flex justify-content-between align-items-center">
-        <button class="btn btn-sm btn-danger" onclick="modificarCantidad(${index}, -1)">-</button>
-        <span>${item.nombre} - $${item.precio}</span>
-        <button class="btn btn-sm btn-success" onclick="modificarCantidad(${index}, 1)">+</button>
+        <div>
+          <button class="btn btn-sm btn-danger me-1" onclick="modificarCantidad(${index}, -1)">-</button>
+          <button class="btn btn-sm btn-success me-2" onclick="modificarCantidad(${index}, 1)">+</button>
+          ${item.nombre} - $${item.precio}
+        </div>
+        <div>
+          <button class="btn btn-sm btn-warning me-1" onclick="editarItem('${item.nombre}', ${item.precio})">✏️</button>
+          <button class="btn btn-sm btn-outline-danger" onclick="eliminarItem('${item.nombre}')">🗑️</button>
+        </div>
       </div>
     `;
   });
@@ -94,6 +100,56 @@ function agregarItem() {
       calcularFactura();
     } else {
       alert('Error al agregar ítem');
+    }
+  });
+}
+
+function eliminarItem(nombre) {
+  if (!confirm(`¿Eliminar "${nombre}"?`)) return;
+  fetch('/items/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nombre })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === 'ok') {
+      carrito = {};
+      fetchItems();
+      renderFactura();
+      calcularFactura();
+    } else {
+      alert('Error al eliminar ítem');
+    }
+  });
+}
+
+function editarItem(nombre, precio) {
+  const nuevo_nombre = prompt('Nuevo nombre:', nombre);
+  const nuevo_precio = parseFloat(prompt('Nuevo precio:', precio));
+  if (!nuevo_nombre || isNaN(nuevo_precio) || nuevo_precio <= 0) {
+    alert('Datos inválidos');
+    return;
+  }
+
+  fetch('/items/update', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      nombre_original: nombre,
+      nuevo_nombre,
+      nuevo_precio
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === 'ok') {
+      carrito = {};
+      fetchItems();
+      renderFactura();
+      calcularFactura();
+    } else {
+      alert('Error al editar ítem');
     }
   });
 }
